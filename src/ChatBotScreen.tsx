@@ -19,21 +19,37 @@ interface ChatBotScreenState {
 }
 
 class ChatBotScreen extends Component<ChatBotScreenProps, ChatBotScreenState> {
+  scrollViewRef: React.RefObject<ScrollView>;
   constructor(props: ChatBotScreenProps) {
     super(props);
     this.state = {
       messages: [],
       inputText: '',
     };
+    this.scrollViewRef = React.createRef();
   }
 
+  updateMessages(messages: any) {
+    this.setState(
+      {
+        messages: messages,
+        inputText: '',
+      },
+      () => {
+        // scroll to end of messages after updating state
+        if (this.scrollViewRef.current) {
+          this.scrollViewRef.current.scrollToEnd();
+        }
+      },
+    );
+  }
   onSendText = async () => {
     const {messages, inputText} = this.state;
+    if (!inputText.trim()){
+      return;
+    }
     messages.push({text: inputText, from: 'user'});
-    this.setState({
-      messages: messages,
-      inputText: '',
-    });
+    this.updateMessages(messages);
 
     // send inputText to OpenAI API and get response
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -55,10 +71,7 @@ class ChatBotScreen extends Component<ChatBotScreenProps, ChatBotScreenState> {
     const {choices} = await response.json();
     const botResponse = choices[0].message.content.trim();
     messages.push({text: botResponse, from: 'bot'});
-    this.setState({
-      messages: messages,
-      inputText: '',
-    });
+    this.updateMessages(messages);
   };
 
   render() {
@@ -69,7 +82,9 @@ class ChatBotScreen extends Component<ChatBotScreenProps, ChatBotScreenState> {
         <View style={styles.titleContainer}>
           <Text style={styles.titleText}>与Chat GPT聊天</Text>
         </View>
-        <ScrollView contentContainerStyle={{flexGrow: 1}}>
+        <ScrollView
+          contentContainerStyle={{flexGrow: 1}}
+          ref={this.scrollViewRef}>
           <View style={styles.messagesContainer}>
             {messages.map((message, index) => (
               <View key={index}>
@@ -113,6 +128,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'column',
+    backgroundColor: '#EDEDED',
   },
   titleContainer: {
     flexDirection: 'row',
@@ -121,6 +137,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#EDEDED',
     paddingTop: 10,
     paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderColor: '#ccc',
   },
   titleText: {
     fontSize: 16,
@@ -128,8 +146,6 @@ const styles = StyleSheet.create({
   },
   messagesContainer: {
     margin: 10,
-    backgroundColor: '#EDEDED',
-    // margin: 10,
   },
   botMessageContainer: {
     backgroundColor: '#FFFFFF',
