@@ -14,7 +14,7 @@ import React, {Component} from 'react';
 interface ChatBotScreenProps {}
 
 interface ChatBotScreenState {
-  messages: {text: string; from: 'user' | 'bot'}[];
+  messages: {content: string; role: 'user' | 'assistant'}[];
   inputText: string;
 }
 
@@ -45,10 +45,10 @@ class ChatBotScreen extends Component<ChatBotScreenProps, ChatBotScreenState> {
   }
   onSendText = async () => {
     const {messages, inputText} = this.state;
-    if (!inputText.trim()){
+    if (!inputText.trim()) {
       return;
     }
-    messages.push({text: inputText, from: 'user'});
+    messages.push({content: inputText, role: 'user'});
     this.updateMessages(messages);
 
     // send inputText to OpenAI API and get response
@@ -61,7 +61,7 @@ class ChatBotScreen extends Component<ChatBotScreenProps, ChatBotScreenState> {
       },
       body: JSON.stringify({
         model: 'gpt-3.5-turbo',
-        messages: [{role: 'user', content: inputText}],
+        messages: this.state.messages,
         max_tokens: 100,
         temperature: 0.7,
         n: 1,
@@ -69,8 +69,8 @@ class ChatBotScreen extends Component<ChatBotScreenProps, ChatBotScreenState> {
       }),
     });
     const {choices} = await response.json();
-    const botResponse = choices[0].message.content.trim();
-    messages.push({text: botResponse, from: 'bot'});
+    const botResponse = choices[0].message;
+    messages.push(botResponse);
     this.updateMessages(messages);
   };
 
@@ -88,17 +88,17 @@ class ChatBotScreen extends Component<ChatBotScreenProps, ChatBotScreenState> {
           <View style={styles.messagesContainer}>
             {messages.map((message, index) => (
               <View key={index}>
-                {message.from === 'user' ? (
+                {message.role === 'user' ? (
                   <View style={styles.userMessageContainer}>
                     {/*<Image*/}
                     {/*  // source={require('../image/bot.png')}*/}
                     {/*  style={styles.botAvatar}*/}
                     {/*/>*/}
-                    <Text style={styles.userMessageText}>{message.text}</Text>
+                    <Text style={styles.userMessageText}>{message.content}</Text>
                   </View>
                 ) : (
                   <View style={styles.botMessageContainer}>
-                    <Text style={styles.botMessageText}>{message.text}</Text>
+                    <Text style={styles.botMessageText}>{message.content}</Text>
                   </View>
                 )}
               </View>
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
   },
   titleText: {
-    fontSize: 16,
+    fontSize: 18,
     color: '#3c3c3c',
   },
   messagesContainer: {
@@ -156,7 +156,8 @@ const styles = StyleSheet.create({
     maxWidth: '80%',
   },
   userMessageText: {
-    fontSize: 14,
+    fontSize: 16,
+    color: '#2f2f2f',
   },
   userMessageContainer: {
     backgroundColor: '#A6EA78',
@@ -167,7 +168,8 @@ const styles = StyleSheet.create({
     maxWidth: '80%',
   },
   botMessageText: {
-    fontSize: 14,
+    fontSize: 16,
+    color: '#2f2f2f',
   },
   inputContainer: {
     flexDirection: 'row',
@@ -191,6 +193,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 10,
     fontSize: 16,
+    color: '#2f2f2f',
     backgroundColor: '#EFEFEF',
   },
   buttonContainer: {
